@@ -21,6 +21,7 @@ install: regex
 	make backend
 	rm -rf $(CDIR)/lex.*.c
 	cp ${PROJ} /usr/local/bin/
+	rm -rf ${PROJ}
 
 uninstall:
 	sudo rm -rf /usr/local/bin/${PROJ}
