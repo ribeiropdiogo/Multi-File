@@ -6,10 +6,6 @@ typedef struct stack {
 	GQueue *stack;
 } *Stack;
 
-Stack makeStack() {
-	return makeFullStack(NULL);
-}
-
 Stack makeFullStack(GDestroyNotify destroyFunc) {
 	Stack s = g_malloc(sizeof(struct stack));
 
@@ -18,6 +14,10 @@ Stack makeFullStack(GDestroyNotify destroyFunc) {
 	s->stack = g_queue_new();
 
 	return s;
+}
+
+Stack makeStack() {
+	return makeFullStack(NULL);
 }
 
 int isEmpty(Stack s) {
