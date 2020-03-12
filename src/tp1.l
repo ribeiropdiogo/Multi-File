@@ -1,7 +1,8 @@
 %{
 #include <glib.h>
+#include "Dictionary.h"
 
-GHashTable *metadados;
+Dictionary meta;
 char *metadado, *valor;
 %}
 
@@ -11,7 +12,7 @@ char *metadado, *valor;
 ^===[ ]*(?i:meta)[^===] 				{BEGIN META;}
 <META>^[a-zA-Z]+[ ]*					{ metadado = strdup(yytext);}
 <META>:[ ]*[a-zA-Z|\@\.áéíãó]+[^\n]  	{ valor = strdup(yytext+1);
-											g_hash_table_insert(metadados,metadado,valor);
+											insertDictionary(meta,metadado,valor);
 										}
 <META>#.*								{}
 <META>.*/===							{BEGIN INITIAL;}
@@ -30,20 +31,22 @@ int yywrap()
 
 static void printMeta(gpointer key, gpointer value, gpointer userdata)
 {
-    printf("%s -> %s\n",key,value);
+    printf("%s -> %s\n",(char*)key, (char*)value);
 }
 
 int main(int argc, char **argv)
 { 
-	metadados = g_hash_table_new(g_str_hash, g_str_equal);
-	g_hash_table_insert(metadados,"name",argv[1]);
+	meta = makeDictionary();
+
+	insertDictionary(meta, g_strdup("name"), g_strdup(argv[1]));
 
 	yylex(); 
 
+	printf("There are %d keys in the hash table\n", sizeDictionary(meta));
 
-	printf("There are %d keys in the hash table\n", g_hash_table_size(metadados));
+	foreachDictionary(meta, printMeta);
 
-	g_hash_table_foreach(metadados, printMeta, kill);
+	destroyDictionary(meta);
 
 	return 0; 
 }
