@@ -6,7 +6,7 @@ typedef struct stack {
 	GQueue *stack;
 } *Stack;
 
-Stack makeFullStack(GDestroyNotify destroyFunc) {
+Stack make_full_stack(GDestroyNotify destroyFunc) {
 	Stack s = g_malloc(sizeof(struct stack));
 
 	s->destroyFunc = destroyFunc;
@@ -16,31 +16,35 @@ Stack makeFullStack(GDestroyNotify destroyFunc) {
 	return s;
 }
 
-Stack makeStack() {
-	return makeFullStack(NULL);
+Stack make_stack() {
+	return make_full_stack(NULL);
 }
 
-int isEmpty(Stack s) {
+int is_empty_stack(Stack s) {
 	return g_queue_is_empty(s->stack);
 }
 
-int sizeStack(Stack s) {
+int size_stack(Stack s) {
 	return g_queue_get_length(s->stack);
 }
 
-void pushStack(Stack s, gpointer entry) {
+void push_stack(Stack s, gpointer entry) {
 	g_queue_push_head(s->stack, entry);
 }
 
-gpointer popStack(Stack s) {
+gpointer pop_stack(Stack s) {
 	return g_queue_pop_head(s->stack);
 }
 
-void destroyStack(Stack s) {
+gpointer peek_stack(Stack s) {
+	return g_queue_peek_head(s->stack);
+}
+
+void destroy_stack(Stack s) {
 	gpointer tmp;
 
 	if(s->destroyFunc) {
-		while( (tmp = popStack(s)) != NULL)
+		while( (tmp = pop_stack(s)) != NULL)
 			(*s->destroyFunc)(tmp);
 	}
 

@@ -17,6 +17,10 @@ char *getValueDictionary(Dictionary dict, char *key) {
 	return (char *)g_hash_table_lookup(dict->table, (void*)key);
 }
 
+int containsDictionary(Dictionary dict, char *key) {
+	return g_hash_table_contains(dict->table, key);
+}
+
 int insertDictionary(Dictionary dict, char *key, char *value) {
 	int r = 1;
 

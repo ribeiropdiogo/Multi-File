@@ -1,20 +1,22 @@
-#ifndef _MKFRT_DICTIONARY_H_
-#define _MKFRT_DICTIONARY_H_
+#ifndef _MKFRT_STACK_H_
+#define _MKFRT_STACK_H_
 
 #include <glib.h>
 
 typedef struct stack * Stack;
 
-Stack makeStack();
+Stack make_stack();
 
-int isEmpty(Stack s);
+int is_empty_stack(Stack s);
 
-int sizeStack(Stack s);
+int size_stack(Stack s);
 
-void pushStack(Stack s, gpointer entry);
+void push_stack(Stack s, gpointer entry);
 
-gpointer popStack(Stack s);
+gpointer pop_stack(Stack s);
 
-void destroyStack(Stack s);
+gpointer peek_stack(Stack s);
+
+void destroy_stack(Stack s);
 
 #endif
