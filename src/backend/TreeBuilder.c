@@ -1,5 +1,10 @@
 #include <glib.h>
 #include <stdio.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include "Dictionary.h"
 #include "Node.h"
 #include "Stack.h"
@@ -16,7 +21,7 @@ typedef struct treebuilder {
 	GNode **tree;
 	Stack *coordinator;
 	int main_nodes, cords,
-		n_main_node, n_cords;
+		n_main_node, n_cords, bef;
 } *TreeBuilder;
 
 // -------------------------------------------------------
@@ -27,6 +32,9 @@ static void double_tree(TreeBuilder tb);
 static void double_coord(TreeBuilder tb, int level);
 static Node make_file(TreeBuilder tb, char *file);
 static GNode *add_to_tree(TreeBuilder tb, Node node);
+static DIR *opendirat(int dir, const char *dirname);
+static void write_file(TreeBuilder tb, int at, char * file);
+static void write_dir(GNode *node, gpointer data);
 
 // -------------------------------------------------------
 
@@ -102,9 +110,11 @@ static void add_main_file(TreeBuilder tb, char *file) {
 }
 
 static void add_main_dir(TreeBuilder tb, char *dir) {
+	
 	GNode * nn = add_to_tree(tb, make_node(dir, 0));
-
+	
 	push_stack(tb->coordinator[0], nn);
+	
 }
 
 static void double_tree(TreeBuilder tb) {
@@ -147,6 +157,100 @@ static GNode *add_to_tree(TreeBuilder tb, Node node) {
 	return nn;
 }
 
+static DIR *opendirat(int dir, const char *dirname) {
+  // Open directory.
+  int fd = openat(dir, dirname, O_RDONLY|O_DIRECTORY|O_NOCTTY|O_CLOEXEC|O_NONBLOCK);
+  
+  if (fd == -1)
+    return NULL;
+
+  // Create directory handle.
+  DIR *result = fdopendir(fd);
+  if (result == NULL)
+    close(fd);
+  return result;
+}
+
+static void write_file(TreeBuilder tb, int at, char * file) {
+	int fd, x;
+	Node node;
+	gpointer tmp;
+
+	if(at < 0)
+		fd = open(file, O_CREAT | O_WRONLY, 0777);
+	else
+		fd = openat(at, file, O_CREAT | O_WRONLY, 0777);
+
+	tmp = getValueDictionary(tb->files, file);
+
+	if(tmp != NULL) {
+		node = NODE(tmp);
+		x = write(fd,
+			get_name_node(node),
+			get_id_node(node)
+			);
+	}
+
+	close(fd);
+}
+
+static void write_dir(GNode *node, gpointer data) {
+	DIR *dir;
+	int id, fd, at;
+
+	
+
+	Node tmp = NODE(node);
+	char *name = (char*)get_name_node(tmp);
+	TreeBuilder tb = (TreeBuilder)data;
+	
+	id = get_id_node(tmp);
+	at = tb->bef;
+
+	
+
+	if(id == 0) {
+		
+		if(at < 0) {
+			mkdir(name, 0777);
+			dir = opendir(name);
+		}
+		else {
+			
+			mkdirat(at, name, 0777);
+			
+			dir = opendirat(at, name);
+			
+		}
+
+		
+
+		tb->bef = dirfd(dir);
+
+		
+		// for each
+		g_node_children_foreach(
+			node,
+			G_TRAVERSE_ALL,
+			write_dir,
+			data
+			);
+
+		
+
+		closedir(dir);
+
+		
+	}
+	else {
+		write_file(tb, at, name);
+	}
+
+	tb->bef = at;
+
+	
+}
+
 void destroy_tree_builder(TreeBuilder tb) {
 	int i;
 
@@ -168,36 +272,42 @@ void destroy_tree_builder(TreeBuilder tb) {
 	free(tb);
 }
 
-void func_cois(GNode *node, gpointer data) {
-	Node tmp = NODE(node);
-	printf(">IN %s\n", get_name_node(tmp));
-	g_node_children_foreach(node,G_TRAVERSE_ALL,func_cois,NULL);
-}
+void dump_tree_builder(TreeBuilder tb) {
+	Node node;
+	int i, id, fd, aux, N = tb->main_nodes;
+	DIR *dir;
+	GNode *tmp;
+	char *name;
 
-void print_tree_builder(TreeBuilder tb) {
-	int i;
-	Node tmp;
+	
+	for(i = 0; i < N; i++) {
+		
+		tmp = tb->tree[i];
+		
+		if(tmp) {
+			
+			//node = make_node(tb, -1);
+			tb->bef = -1;
 
-	for(i = 0; i < tb->main_nodes; i++) {
-		if(tb->tree[i]) {
-			tmp = NODE(tb->tree[i]);
-			printf("*IN %s\n", get_name_node(tmp));
-			g_node_children_foreach(tb->tree[i],G_TRAVERSE_ALL,func_cois,NULL);
+			
+			write_dir(tmp, tb);
+
+			
+			//destroy_node(node);
 		}
 	}
 }
 
-/*
 int main() {
 	TreeBuilder tb = make_tree_builder();
 
-	printf("tree:\n");
-
-	add_file_tree_builder(tb, strdup("bruh"), 0);
+	//add_file_tree_builder(tb, strdup("bruh"), 0);
 
 	add_dir_tree_builder(tb, strdup("bruthaa"), 0);
 
 	add_dir_tree_builder(tb, strdup("meeen"), 1);
+
+	add_file_tree_builder(tb, strdup("file0"), 1);
 
 	add_dir_tree_builder(tb, strdup("rqqm"), 0);
 
@@ -209,7 +319,13 @@ int main() {
 
 	add_dir_tree_builder(tb, strdup("subdirgod"), 2);
 
-	print_tree_builder(tb);
+	add_file_tree_builder(tb, strdup("file1"), 1);
+
+	add_file_tree_builder(tb, strdup("file2"), 2);
+
+	add_file_tree_builder(tb, strdup("file3"), 3);
+
+	dump_tree_builder(tb);
 
 	destroy_tree_builder(tb);
-}*/
+}

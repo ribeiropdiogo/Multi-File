@@ -7,11 +7,11 @@ typedef struct dictionary * Dictionary;
 
 Dictionary makeDictionary();
 
-char *getValueDictionary(Dictionary dict, char *key);
+gpointer getValueDictionary(Dictionary dict, char *key);
 
 int containsDictionary(Dictionary dict, char *key);
 
-int insertDictionary(Dictionary dict, char *key, char *value);
+int insertDictionary(Dictionary dict, char *key, gpointer value);
 
 int removeDictionary(Dictionary dict, char *key);
 

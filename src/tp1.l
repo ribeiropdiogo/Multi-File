@@ -34,6 +34,7 @@ static void printMeta(gpointer key, gpointer value, gpointer userdata)
     printf("%s -> %s\n",(char*)key, (char*)value);
 }
 
+/*
 int main(int argc, char **argv)
 { 
 	meta = makeDictionary();
@@ -49,4 +50,4 @@ int main(int argc, char **argv)
 	destroyDictionary(meta);
 
 	return 0; 
-}
+}*/

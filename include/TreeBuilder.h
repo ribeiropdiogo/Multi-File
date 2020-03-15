@@ -11,4 +11,6 @@ int add_dir_tree_builder(TreeBuilder tb, char *dir, unsigned int level);
 
 void destroy_tree_builder(TreeBuilder tb);
 
+void dump_tree_builder(TreeBuilder tb);
+
 #endif

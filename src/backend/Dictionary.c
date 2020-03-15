@@ -13,15 +13,15 @@ Dictionary makeDictionary() {
 	return dict;
 }
 
-char *getValueDictionary(Dictionary dict, char *key) {
-	return (char *)g_hash_table_lookup(dict->table, (void*)key);
+gpointer getValueDictionary(Dictionary dict, char *key) {
+	return g_hash_table_lookup(dict->table, (gpointer)key);
 }
 
 int containsDictionary(Dictionary dict, char *key) {
 	return g_hash_table_contains(dict->table, key);
 }
 
-int insertDictionary(Dictionary dict, char *key, char *value) {
+int insertDictionary(Dictionary dict, char *key, gpointer value) {
 	int r = 1;
 
 	if(!g_hash_table_contains(dict->table, key)) {
