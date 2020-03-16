@@ -297,7 +297,7 @@ void dump_tree_builder(TreeBuilder tb) {
 		}
 	}
 }
-
+/*
 int main() {
 	TreeBuilder tb = make_tree_builder();
 
@@ -328,4 +328,4 @@ int main() {
 	dump_tree_builder(tb);
 
 	destroy_tree_builder(tb);
-}
+}*/
