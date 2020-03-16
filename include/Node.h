@@ -10,13 +10,13 @@ typedef struct node * Node;
  * @param name Nome do nó.
  * @param id Id do nó, 0 é diretoria, 1 é ficheiro.
  */
-Node make_node(gpointer name, int id);
+Node make_node(gpointer name, gsize id);
 
 gpointer get_name_node(Node node);
 
-int get_id_node(Node node);
+gsize get_id_node(Node node);
 
-void set_id_node(Node node, int id);
+void set_id_node(Node node, gsize id);
 
 void destroy_node(Node node);
 

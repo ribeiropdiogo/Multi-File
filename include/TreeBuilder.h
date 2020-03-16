@@ -13,4 +13,8 @@ void destroy_tree_builder(TreeBuilder tb);
 
 void dump_tree_builder(TreeBuilder tb);
 
+int contains_file(TreeBuilder tb, char *file);
+
+void add_info_to_file(TreeBuilder tb, char *file, char *info, int len);
+
 #endif

@@ -4,48 +4,89 @@
 #include "TreeBuilder.h"
 
 int track_level(char *str);
+void add_to_meta(char *key, char *value);
+void add_dir();
+void add_file();
 
 GString *curr;
 
 Dictionary meta;
 TreeBuilder tree;
 
-char *metadado, *valor;
-int level = 0;
+char *file,*metadado, *valor;
+int stc, level = 0;
 %}
 
-%x META FOLDER
+%x META FOLDER FILERD SKIP TITLE
 
 wd  [a-zA-Z]+
 ws  [0-9a-zA-Z|\@\.áéíãó]+
 %%
-^===[ ]*(?i:meta)[ ]*\n 				{BEGIN META;}
-<META>\n\r?				{if(curr->len > 0)
-							insertDictionary(meta,metadado,strdup(curr->str));
-						g_string_erase(curr,0,-1);}
-<META>^{wd}				{ metadado = strdup(yytext);}
-<META>[ ]*:[ ]*			{;}
-<META,FOLDER>[ \t]		{g_string_append_printf(curr, " ");}
-<META,FOLDER>{ws}  			{g_string_append_printf(curr, "%s", yytext);
-						}
-<META,FOLDER>^#[^\n]*\n        {;}
-<META,FOLDER>.*/===			{BEGIN INITIAL;}
+<TITLE>==[ ]*				{stc = SKIP;g_string_erase(curr,0,-1);}
+							/* Estado predifinido é o de ignorar */
+<TITLE>(?i:meta)			{stc = META;}
+							/* Próximo estado é o analizador de METADADOS */
+<TITLE>(?i:tree)			{stc = FOLDER;}
+							/* Próximo estado é o analizador de TREE */
+<TITLE>{ws}				  	{g_string_append_printf(curr,"%s",yytext);}
+							/* Assume-se que próximo estado vai ser de ler ficheiros */
+<TITLE>[ ]					{g_string_append_printf(curr, " ");}
+<TITLE>[ ]*\n 				{printf("finished title\n");
+							if(stc == SKIP) {
+								file = strdup(curr->str);
+								printf("I have file |%s|\n",file);
+								
+								if(contains_file(tree, file)) {
+									printf("it is\n");
+									stc = FILERD;
+								}
+							}
+							g_string_erase(curr,0,-1);
+							BEGIN stc;}
+							/* Limpa o string buffer, antes do inicio do próximo estado */
 
-^===[ ]*(?i:tree)[ ]*\n 				{BEGIN FOLDER;}
-<FOLDER>\/\n\r?			{printf("adding dir\n");
-						if(curr->len > 0)
-							add_dir_tree_builder(tree, strdup(curr->str), level);
-						g_string_erase(curr,0,-1);
-						level = 0;}
-<FOLDER>\n\r?				{printf("adding file\n");
-						if(curr->len > 0)
-							add_file_tree_builder(tree, strdup(curr->str), level);
-						g_string_erase(curr,0,-1);
-						level = 0;}
-<FOLDER>^-*[ ]*		{level = track_level(yytext);}
-<*>\{%{wd}%\}			{yytext[yyleng-2] = '\0';
-					g_string_append_printf(curr, "%s", (char*)getValueDictionary(meta, yytext+2));}
-<*>.|\n                {;}
+<FILERD>.|\n                  {g_string_append_printf(curr, "%s", yytext);}
+
+<SKIP>.|\n              	{;}
+							/* No estado SKIP só se ignora */
+
+
+
+<META>\n\r?					{add_to_meta(metadado, strdup(curr->str));}
+							/* Adiciona aos metadados válidos */
+<META>^{wd}					{ metadado = strdup(yytext);}
+							/* Armazena o metadado em memória */
+<META>[ ]*:[ ]*				{;}
+
+
+							/* Ignora os espaços entre atribuições */
+<META,FOLDER>[ \t]			{g_string_append_printf(curr, " ");}
+							/* Espaços e tabs contribuem como tabs */
+<META,FOLDER>{ws}  			{g_string_append_printf(curr, "%s", yytext);}
+							/* Cada vez que é capturada uma palavra, é adicionada ao string buffer */
+<META,FOLDER>^#[^\n]*\n     {;}
+							/* No estado META e FOLDER, é possivel adicionar comentários de linha */
+
+
+<FOLDER>\/\n\r?				{add_dir();}
+							/* Deteta que se pretende adicionar uma diretoria, e adiciona */
+<FOLDER>\n\r?				{add_file();}
+							/* Deteta que se pretende adicionar um ficheiro, e adiciona */
+<FOLDER>^-*[ ]*				{level = track_level(yytext);}
+							/* Escreve o nivel de profundidade do que se pretende adicionar */
+
+
+<*>\{%{wd}%\}				{yytext[yyleng-2] = '\0';
+							g_string_append_printf(curr, "%s", (char*)getValueDictionary(meta, yytext+2));}
+							/* Quando encontra, em qualquer estado, metadados, faz append do correspondente valor */
+
+<*>^=/==					{if(stc == FILERD)
+								add_info_to_file(tree, file, strdup(curr->str), curr->len);
+							BEGIN TITLE;}
+<*>.|\n                		{;}
+<FILERD><<EOF>>				{printf("file %s, len %d\ncheguei ao fim\n%s\n", file,curr->len,curr->str);
+							add_info_to_file(tree, file, strdup(curr->str), curr->len);
+							yyterminate();}
 %%
 
 int track_level(char *str) {
@@ -55,6 +96,26 @@ int track_level(char *str) {
 			;
 
 	return i;
+}
+
+void add_to_meta(char *key, char *value) {
+	if(curr->len > 0)
+		insertDictionary(meta,key,value);
+	g_string_erase(curr,0,-1);
+}
+
+void add_dir() {
+	if(curr->len > 0)
+		add_dir_tree_builder(tree, strdup(curr->str), level);
+	g_string_erase(curr,0,-1);
+	level = 0;
+}
+
+void add_file() {
+	if(curr->len > 0)
+		add_file_tree_builder(tree, strdup(curr->str), level);
+	g_string_erase(curr,0,-1);
+	level = 0;
 }
 
 int yywrap()
@@ -75,14 +136,26 @@ int main(int argc, char **argv)
 
 	insertDictionary(meta, g_strdup("name"), g_strdup(argv[1]));
 
+	printf("File is %s\n", argv[2]);
+
+	yyin = fopen(argv[2],"r");
+
+
+	stc = SKIP;
+
 	yylex(); 
 
-	printf("There are %d keys in the hash table\n", sizeDictionary(meta));
 
-	foreachDictionary(meta, printMeta);
+	//printf("There are %d keys in the hash table\n", sizeDictionary(meta));
 
-	printf("Dumping tree");
+
+	//foreachDictionary(meta, printMeta);
+
+	printf("Dumping tree\n");
+
 	dump_tree_builder(tree);
+
+	printf("Finished dumping tree\n");
 
 	destroy_tree_builder(tree);
 	destroyDictionary(meta);

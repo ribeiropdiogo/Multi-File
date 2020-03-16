@@ -183,8 +183,14 @@ static void write_file(TreeBuilder tb, int at, char * file) {
 
 	tmp = getValueDictionary(tb->files, file);
 
+	//node = (Node*)tmp;
+
+	printf("!%s! file TMP IS %ld\n", file, tmp);
+
 	if(tmp != NULL) {
-		node = NODE(tmp);
+		node = (Node)(tmp);
+		printf("I has %ld len %ld \n%s\n", node, get_id_node(node), (char*)get_name_node(node));
+		printf("What is up\n");
 		x = write(fd,
 			get_name_node(node),
 			get_id_node(node)
@@ -198,16 +204,12 @@ static void write_dir(GNode *node, gpointer data) {
 	DIR *dir;
 	int id, fd, at;
 
-	
-
 	Node tmp = NODE(node);
 	char *name = (char*)get_name_node(tmp);
 	TreeBuilder tb = (TreeBuilder)data;
 	
 	id = get_id_node(tmp);
 	at = tb->bef;
-
-	
 
 	if(id == 0) {
 		
@@ -223,10 +225,7 @@ static void write_dir(GNode *node, gpointer data) {
 			
 		}
 
-		
-
 		tb->bef = dirfd(dir);
-
 		
 		// for each
 		g_node_children_foreach(
@@ -236,19 +235,13 @@ static void write_dir(GNode *node, gpointer data) {
 			data
 			);
 
-		
-
 		closedir(dir);
-
-		
 	}
 	else {
 		write_file(tb, at, name);
 	}
 
-	tb->bef = at;
-
-	
+	tb->bef = at;	
 }
 
 void destroy_tree_builder(TreeBuilder tb) {
@@ -274,28 +267,39 @@ void destroy_tree_builder(TreeBuilder tb) {
 
 void dump_tree_builder(TreeBuilder tb) {
 	Node node;
+
 	int i, id, fd, aux, N = tb->main_nodes;
 	DIR *dir;
 	GNode *tmp;
 	char *name;
 
-	
 	for(i = 0; i < N; i++) {
-		
+
 		tmp = tb->tree[i];
 		
 		if(tmp) {
 			
 			//node = make_node(tb, -1);
 			tb->bef = -1;
-
 			
 			write_dir(tmp, tb);
-
-			
+	
 			//destroy_node(node);
 		}
 	}
+}
+
+int contains_file(TreeBuilder tb, char *file) {
+	return containsDictionary(tb->files, file);
+}
+
+void add_info_to_file(TreeBuilder tb, char *file, char *info, int len) {
+	Node node = make_node(info, len);
+
+	printf("Coisa %ld\n", node);
+	printf("My size is %d,\nAQUI\n%s", get_id_node(node), (char*)get_name_node(node));
+
+	appendDictionary(tb->files, file, (gpointer)node);
 }
 /*
 int main() {

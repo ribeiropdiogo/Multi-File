@@ -17,6 +17,8 @@ int removeDictionary(Dictionary dict, char *key);
 
 void foreachDictionary(Dictionary dict, GHFunc func);
 
+void appendDictionary(Dictionary dict, char *key, gpointer value);
+
 int sizeDictionary(Dictionary dict);
 
 void destroyDictionary(Dictionary dict);

@@ -33,6 +33,10 @@ int insertDictionary(Dictionary dict, char *key, gpointer value) {
 	return r;
 }
 
+void appendDictionary(Dictionary dict, char *key, gpointer value) {
+	g_hash_table_insert(dict->table, key, value);
+}
+
 int removeDictionary(Dictionary dict, char *key) {
 	return (int)g_hash_table_remove(dict->table, key);
 }
