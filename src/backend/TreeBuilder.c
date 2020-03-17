@@ -1,5 +1,4 @@
 #include <glib.h>
-#include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -183,14 +182,8 @@ static void write_file(TreeBuilder tb, int at, char * file) {
 
 	tmp = getValueDictionary(tb->files, file);
 
-	//node = (Node*)tmp;
-
-	printf("!%s! file TMP IS %ld\n", file, tmp);
-
 	if(tmp != NULL) {
 		node = (Node)(tmp);
-		printf("I has %ld len %ld \n%s\n", node, get_id_node(node), (char*)get_name_node(node));
-		printf("What is up\n");
 		x = write(fd,
 			get_name_node(node),
 			get_id_node(node)
@@ -202,7 +195,7 @@ static void write_file(TreeBuilder tb, int at, char * file) {
 
 static void write_dir(GNode *node, gpointer data) {
 	DIR *dir;
-	int id, fd, at;
+	int id, at;
 
 	Node tmp = NODE(node);
 	char *name = (char*)get_name_node(tmp);
@@ -266,25 +259,16 @@ void destroy_tree_builder(TreeBuilder tb) {
 }
 
 void dump_tree_builder(TreeBuilder tb) {
-	Node node;
-
-	int i, id, fd, aux, N = tb->main_nodes;
-	DIR *dir;
+	int i, N = tb->main_nodes;
 	GNode *tmp;
-	char *name;
 
 	for(i = 0; i < N; i++) {
-
 		tmp = tb->tree[i];
 		
 		if(tmp) {
-			
-			//node = make_node(tb, -1);
 			tb->bef = -1;
 			
 			write_dir(tmp, tb);
-	
-			//destroy_node(node);
 		}
 	}
 }
@@ -296,40 +280,5 @@ int contains_file(TreeBuilder tb, char *file) {
 void add_info_to_file(TreeBuilder tb, char *file, char *info, int len) {
 	Node node = make_node(info, len);
 
-	printf("Coisa %ld\n", node);
-	printf("My size is %d,\nAQUI\n%s", get_id_node(node), (char*)get_name_node(node));
-
 	appendDictionary(tb->files, file, (gpointer)node);
 }
-/*
-int main() {
-	TreeBuilder tb = make_tree_builder();
-
-	//add_file_tree_builder(tb, strdup("bruh"), 0);
-
-	add_dir_tree_builder(tb, strdup("bruthaa"), 0);
-
-	add_dir_tree_builder(tb, strdup("meeen"), 1);
-
-	add_file_tree_builder(tb, strdup("file0"), 1);
-
-	add_dir_tree_builder(tb, strdup("rqqm"), 0);
-
-	add_dir_tree_builder(tb, strdup("meeen"), 1);
-
-	add_dir_tree_builder(tb, strdup("sgod"), 2);
-
-	add_dir_tree_builder(tb, strdup("meeen22"), 1);
-
-	add_dir_tree_builder(tb, strdup("subdirgod"), 2);
-
-	add_file_tree_builder(tb, strdup("file1"), 1);
-
-	add_file_tree_builder(tb, strdup("file2"), 2);
-
-	add_file_tree_builder(tb, strdup("file3"), 3);
-
-	dump_tree_builder(tb);
-
-	destroy_tree_builder(tb);
-}*/

@@ -1,43 +1,77 @@
+%option noyywrap
+
 %{
 #include <glib.h>
 #include "Dictionary.h"
 #include "TreeBuilder.h"
 
+GString *curr;				// String buffer usado.
+Dictionary meta;			// Dicionario de metados.
+TreeBuilder tree;			// Arvore de diretorias.
+char *file, *metadado;		// Nome de ficheiro e meta em memoria.
+int stc;					// Estado a considerar.
+int level = 0;				// Nivel de profundidade da diretoria.
+
+/* 
+	Regista nivel de profundidade da diretoria
+	Passada como argumento.
+*/
 int track_level(char *str);
+
+/*
+	Adiciona os metadados ao dicionario.
+*/
 void add_to_meta(char *key, char *value);
+
+/*
+	Adiciona a diretoria inscrita em memoria
+	à arvore de diretorias.
+*/
 void add_dir();
+
+/*
+	Adiciona o ficheiro inscrito em memoria
+	à arvore de diretorias.
+*/
 void add_file();
-
-GString *curr;
-
-Dictionary meta;
-TreeBuilder tree;
-
-char *file,*metadado, *valor;
-int stc, level = 0;
 %}
 
 %x META FOLDER FILERD SKIP TITLE
 
-wd  [a-zA-Z]+
-ws  [0-9a-zA-Z|\@\.áéíãó]+
+wd  [a-zA-Z0-9.]+
+ws  [^ \n\r\t]+
+wt	[^ \n\r\r/]+
 %%
-<TITLE>==[ ]*				{stc = SKIP;g_string_erase(curr,0,-1);}
+<*>^=/==					{if(stc == FILERD)
+								add_info_to_file(tree, file, strdup(curr->str), curr->len);
+							BEGIN TITLE;}
+							/* Inicio de titulo detetado, se estado anteriro for o de leitura de ficheiro, então adiciona a informação obtida à arvore de diretoria. */
+
+<*>\{%{wd}%\}				{yytext[yyleng-2] = '\0';
+							g_string_append_printf(curr, "%s", (char*)getValueDictionary(meta, yytext+2));}
+							/* Quando encontra, em qualquer estado, metadados, faz append do correspondente valor. */
+
+<TITLE>==[ ]*				{stc = SKIP;
+							g_string_erase(curr,0,-1);}
 							/* Estado predifinido é o de ignorar */
+
 <TITLE>(?i:meta)			{stc = META;}
 							/* Próximo estado é o analizador de METADADOS */
+
 <TITLE>(?i:tree)			{stc = FOLDER;}
 							/* Próximo estado é o analizador de TREE */
-<TITLE>{ws}				  	{g_string_append_printf(curr,"%s",yytext);}
+
+<TITLE>{wt}				  	{printf("%s\n", yytext);
+							g_string_append_printf(curr,"%s",yytext);}
 							/* Assume-se que próximo estado vai ser de ler ficheiros */
+
 <TITLE>[ ]					{g_string_append_printf(curr, " ");}
-<TITLE>[ ]*\n 				{printf("finished title\n");
-							if(stc == SKIP) {
+							/* Sempre que encontra um espaço entre palavras, concatena ao buffer, permitindo assim nomear ficheiros com varias palavras */
+
+<TITLE>[ ]*\n 				{if(stc == SKIP) {
 								file = strdup(curr->str);
-								printf("I have file |%s|\n",file);
 								
 								if(contains_file(tree, file)) {
-									printf("it is\n");
 									stc = FILERD;
 								}
 							}
@@ -45,48 +79,51 @@ ws  [0-9a-zA-Z|\@\.áéíãó]+
 							BEGIN stc;}
 							/* Limpa o string buffer, antes do inicio do próximo estado */
 
-<FILERD>.|\n                  {g_string_append_printf(curr, "%s", yytext);}
+<FILERD>.|\n                {g_string_append_printf(curr, "%s", yytext);}
+							/* Qualquer informação deve ser adicionada ao fim do buffer associado ao ficheiro. */
+
+<FILERD><<EOF>>				{add_info_to_file(tree, file, strdup(curr->str), curr->len);
+							yyterminate();}
+							/* Caso se encontre o EOF, durante o estado FILERD, entao a informação do ficheiro é adicionada à arvore de diretoria. */
 
 <SKIP>.|\n              	{;}
 							/* No estado SKIP só se ignora */
 
-
-
 <META>\n\r?					{add_to_meta(metadado, strdup(curr->str));}
 							/* Adiciona aos metadados válidos */
-<META>^{wd}					{ metadado = strdup(yytext);}
+
+<META>^{wd}/[ ]*:[ ]*		{ metadado = strdup(yytext);}
 							/* Armazena o metadado em memória */
+
 <META>[ ]*:[ ]*				{;}
-
-
 							/* Ignora os espaços entre atribuições */
-<META,FOLDER>[ \t]			{g_string_append_printf(curr, " ");}
+
+<META,FOLDER>[ ]			{g_string_append_printf(curr, " ");}
 							/* Espaços e tabs contribuem como tabs */
-<META,FOLDER>{ws}  			{g_string_append_printf(curr, "%s", yytext);}
-							/* Cada vez que é capturada uma palavra, é adicionada ao string buffer */
+
 <META,FOLDER>^#[^\n]*\n     {;}
 							/* No estado META e FOLDER, é possivel adicionar comentários de linha */
 
-
 <FOLDER>\/\n\r?				{add_dir();}
 							/* Deteta que se pretende adicionar uma diretoria, e adiciona */
+
 <FOLDER>\n\r?				{add_file();}
 							/* Deteta que se pretende adicionar um ficheiro, e adiciona */
+
 <FOLDER>^-*[ ]*				{level = track_level(yytext);}
 							/* Escreve o nivel de profundidade do que se pretende adicionar */
 
+<META>{ws}  				{printf("%s\n", yytext);
+							g_string_append_printf(curr, "%s", yytext);}
+							/* Cada vez que é capturada uma palavra, é adicionada ao string buffer */
 
-<*>\{%{wd}%\}				{yytext[yyleng-2] = '\0';
-							g_string_append_printf(curr, "%s", (char*)getValueDictionary(meta, yytext+2));}
-							/* Quando encontra, em qualquer estado, metadados, faz append do correspondente valor */
+<FOLDER>{wt}	  			{printf("%s\n", yytext);
+							g_string_append_printf(curr, "%s", yytext);}
+							/* Cada vez que é capturada uma palavra, é adicionada ao string buffer */
 
-<*>^=/==					{if(stc == FILERD)
-								add_info_to_file(tree, file, strdup(curr->str), curr->len);
-							BEGIN TITLE;}
+
 <*>.|\n                		{;}
-<FILERD><<EOF>>				{printf("file %s, len %d\ncheguei ao fim\n%s\n", file,curr->len,curr->str);
-							add_info_to_file(tree, file, strdup(curr->str), curr->len);
-							yyterminate();}
+							/* Pretende-se ignorar qualquer outro caso. */
 %%
 
 int track_level(char *str) {
@@ -118,45 +155,33 @@ void add_file() {
 	level = 0;
 }
 
-int yywrap()
-{ 
-	return(1); 
-}
-
-static void printMeta(gpointer key, gpointer value, gpointer userdata)
-{
-    printf("%s -> %s\n",(char*)key, (char*)value);
-}
-
 int main(int argc, char **argv)
 { 
+	if(argc != 3) {
+		fprintf(stderr, "Wrong number of arguments!");
+		return 1;
+	}
+
+	// Construcao das estruturas principais.
 	meta = makeDictionary();
 	tree = make_tree_builder();
+
+	// Construcao do buffer utilizado.
 	curr = g_string_new(NULL);
 
+	// Insere o primeiro metadado, o nome do projeto.
 	insertDictionary(meta, g_strdup("name"), g_strdup(argv[1]));
-
-	printf("File is %s\n", argv[2]);
 
 	yyin = fopen(argv[2],"r");
 
-
 	stc = SKIP;
 
-	yylex(); 
+	yylex();
 
-
-	//printf("There are %d keys in the hash table\n", sizeDictionary(meta));
-
-
-	//foreachDictionary(meta, printMeta);
-
-	printf("Dumping tree\n");
-
+	// Constroi todas as diretorias e ficheiros em memoria.
 	dump_tree_builder(tree);
 
-	printf("Finished dumping tree\n");
-
+	// Liberta memória associada.
 	destroy_tree_builder(tree);
 	destroyDictionary(meta);
 
