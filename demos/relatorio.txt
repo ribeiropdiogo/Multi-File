@@ -1,0 +1,85 @@
+=== meta
+
+proj: PL
+email: \{a84442,a84930\}@alunos.uminho.pt
+author: Diogo Ribeiro\orcidID{A84442} \and Rui Reis\orcidID{A84930}
+uni: Universidade do Minho
+authrun: R. Reis, D. Ribeiro
+
+# "name" é dado por argumento de linha de comando (argv[1])
+
+=== tree
+
+{%proj%}/
+- chapters/
+-- intro.tex
+-- teoria.tex
+-- estruturas.tex
+-- flex.tex
+-- demo.tex
+-- final.tex
+- diagrams/
+- tables/
+- images/
+- main.tex
+
+=== main.tex
+\documentclass[runningheads]{llncs}
+
+\usepackage[portuguese]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage[utf8]{inputenc}
+\usepackage{float}
+
+\begin{document}
+
+\renewcommand{\labelitemi}{$\bullet$}
+
+\title{{%name%}}
+
+\author{
+{%author%}
+}
+
+\titlerunning{{%uni%}}
+
+\authorrunning{{%authrun%}}
+
+\institute{
+Universidade do Minho, Departamento de Informática, 4710-057 Braga, Portugal\\
+e-mail: {%email%}
+}
+
+\maketitle             
+
+\begin{abstract}
+
+\end{abstract}
+
+\section{Introdução e Contextualização}
+\input{chapters/intro}
+
+\section{Teoria Essencial}
+\input{chapters/teoria}
+
+\section{Estruturas Auxiliares}
+\input{chapters/estruturas}
+
+\section{Implementação em \textit{Flex}}
+\input{chapters/flex}
+
+\section{Demonstração Tecnológica}
+\input{chapters/demo}
+
+\section{Conclusões e Trabalho Futuro}
+\input{chapters/final}
+
+\end{document}
+
+=== intro.tex
+=== teoria.tex
+=== estruturas.tex
+=== flex.tex
+=== demo.tex
+=== final.tex
