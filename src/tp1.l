@@ -39,8 +39,8 @@ void add_file();
 %x META FOLDER FILERD SKIP TITLE
 
 wd  [a-zA-Z0-9.]+
-ws  [^ \n\r\t]+
-wt	[^ \n\r\r/]+
+ws  [^ \n\r\t{}]+
+wt	[^ \n\r\r/{}]+
 %%
 <*>^=/==					{if(stc == FILERD)
 								add_info_to_file(tree, file, strdup(curr->str), curr->len);
@@ -113,7 +113,7 @@ wt	[^ \n\r\r/]+
 <FOLDER>^-*[ ]*				{level = track_level(yytext);}
 							/* Escreve o nivel de profundidade do que se pretende adicionar */
 
-<META>{ws}  				{printf("%s\n", yytext);
+<META>{ws}					{printf("%s\n", yytext);
 							g_string_append_printf(curr, "%s", yytext);}
 							/* Cada vez que é capturada uma palavra, é adicionada ao string buffer */
 
