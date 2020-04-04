@@ -61,8 +61,7 @@ wt	[^ \n\r\r/{}]+
 <TITLE>(?i:tree)			{stc = FOLDER;}
 							/* Próximo estado é o analizador de TREE */
 
-<TITLE>{wt}				  	{printf("%s\n", yytext);
-							g_string_append_printf(curr,"%s",yytext);}
+<TITLE>{wt}				  	{g_string_append_printf(curr,"%s",yytext);}
 							/* Assume-se que próximo estado vai ser de ler ficheiros */
 
 <TITLE>[ ]					{g_string_append_printf(curr, " ");}
@@ -113,12 +112,10 @@ wt	[^ \n\r\r/{}]+
 <FOLDER>^-*[ ]*				{level = track_level(yytext);}
 							/* Escreve o nivel de profundidade do que se pretende adicionar */
 
-<META>{ws}					{printf("%s\n", yytext);
-							g_string_append_printf(curr, "%s", yytext);}
+<META>{ws}					{g_string_append_printf(curr, "%s", yytext);}
 							/* Cada vez que é capturada uma palavra, é adicionada ao string buffer */
 
-<FOLDER>{wt}	  			{printf("%s\n", yytext);
-							g_string_append_printf(curr, "%s", yytext);}
+<FOLDER>{wt}	  			{g_string_append_printf(curr, "%s", yytext);}
 							/* Cada vez que é capturada uma palavra, é adicionada ao string buffer */
 
 

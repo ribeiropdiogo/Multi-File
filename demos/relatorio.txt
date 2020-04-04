@@ -1,12 +1,13 @@
 === meta
 
+# Template para a criação de um relatório-tipo em LaTeX.
+# argv[1] corresponde ao titulo do relatório.
+
 proj: PL
 email: \{a84442,a84930\}@alunos.uminho.pt
 author: Diogo Ribeiro\orcidID{A84442} \and Rui Reis\orcidID{A84930}
 uni: Universidade do Minho
 authrun: R. Reis, D. Ribeiro
-
-# "name" é dado por argumento de linha de comando (argv[1])
 
 === tree
 
@@ -19,8 +20,11 @@ authrun: R. Reis, D. Ribeiro
 -- demo.tex
 -- final.tex
 - diagrams/
+-- .open
 - tables/
+-- .open
 - images/
+-- .open
 - main.tex
 
 === main.tex
@@ -83,3 +87,4 @@ e-mail: {%email%}
 === flex.tex
 === demo.tex
 === final.tex
+=== .open
