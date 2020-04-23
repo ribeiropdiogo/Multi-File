@@ -7,7 +7,7 @@ uni: uminho
 dep: informatic
 org: kings@{%uni%},{%dep%}
 
-=== tree
+== tree
 
 {%proj%}/
 - {%sp%}0/
@@ -35,3 +35,5 @@ org: kings@{%uni%},{%dep%}
 {%uni%}/
 
 === .open
+
+Hello world! {%uni%} from {%dep%}

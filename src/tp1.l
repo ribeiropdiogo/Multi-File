@@ -11,6 +11,7 @@ TreeBuilder tree;			// Arvore de diretorias.
 char *file, *metadado;		// Nome de ficheiro e meta em memoria.
 int stc;					// Estado a considerar.
 int level = 0;				// Nivel de profundidade da diretoria.
+int b1 = 0, b2 = 0;
 
 /* 
 	Regista nivel de profundidade da diretoria
@@ -42,23 +43,26 @@ wd  [a-zA-Z0-9.]+
 ws  [^ \n\r\t{}]+
 wt	[^ \n\r\r/{}]+
 %%
-<*>^=/==					{if(stc == FILERD)
+<*>^=/={2,}					{if(stc == FILERD)
 								add_info_to_file(tree, file, strdup(curr->str), curr->len);
 							BEGIN TITLE;}
 							/* Inicio de titulo detetado, se estado anteriro for o de leitura de ficheiro, então adiciona a informação obtida à arvore de diretoria. */
 
 <*>\{%{wd}%\}				{yytext[yyleng-2] = '\0';
-							g_string_append_printf(curr, "%s", (char*)getValueDictionary(meta, yytext+2));}
+							if(containsDictionary(meta, yytext))
+								g_string_append_printf(curr, "%s", (char*)getValueDictionary(meta, yytext+2));
+							else
+								fprintf(stderr, "Unmatched metadata found and ignored, with key \"%s\".\n", yytext);}
 							/* Quando encontra, em qualquer estado, metadados, faz append do correspondente valor. */
 
-<TITLE>==[ ]*				{stc = SKIP;
+<TITLE>={2,}[ ]*			{stc = SKIP;
 							g_string_erase(curr,0,-1);}
 							/* Estado predifinido é o de ignorar */
 
-<TITLE>(?i:meta)			{stc = META;}
+<TITLE>(?i:meta)			{stc = META; b1 = 1;}
 							/* Próximo estado é o analizador de METADADOS */
 
-<TITLE>(?i:tree)			{stc = FOLDER;}
+<TITLE>(?i:tree)			{stc = FOLDER; b2 = 1;}
 							/* Próximo estado é o analizador de TREE */
 
 <TITLE>{wt}				  	{g_string_append_printf(curr,"%s",yytext);}
@@ -72,6 +76,9 @@ wt	[^ \n\r\r/{}]+
 								
 								if(contains_file(tree, file)) {
 									stc = FILERD;
+								}
+								else {
+									fprintf(stderr, "File \"%s\" isn't specified and will be ignored.\n", file);
 								}
 							}
 							g_string_erase(curr,0,-1);
@@ -175,8 +182,14 @@ int main(int argc, char **argv)
 
 	yylex();
 
+	if(!b1)
+		fprintf(stderr, "Warning: No metadata was defined in the input file.%s\n");
+
 	// Constroi todas as diretorias e ficheiros em memoria.
-	dump_tree_builder(tree);
+	if(!b2)
+		fprintf(stderr, "Tree structure was not defined, aborting creation.%s\n");
+	else
+		dump_tree_builder(tree);
 
 	// Liberta memória associada.
 	destroy_tree_builder(tree);
