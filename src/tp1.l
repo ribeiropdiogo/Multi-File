@@ -49,10 +49,10 @@ wt	[^ \n\r\r/{}]+
 							/* Inicio de titulo detetado, se estado anteriro for o de leitura de ficheiro, então adiciona a informação obtida à arvore de diretoria. */
 
 <*>\{%{wd}%\}				{yytext[yyleng-2] = '\0';
-							if(containsDictionary(meta, yytext))
+							if(containsDictionary(meta, yytext + 2))
 								g_string_append_printf(curr, "%s", (char*)getValueDictionary(meta, yytext+2));
 							else
-								fprintf(stderr, "Unmatched metadata found and ignored, with key \"%s\".\n", yytext);}
+								fprintf(stderr, "Unmatched metadata found and ignored, with key \"%s\".\n", yytext + 2);}
 							/* Quando encontra, em qualquer estado, metadados, faz append do correspondente valor. */
 
 <TITLE>={2,}[ ]*			{stc = SKIP;
@@ -183,11 +183,11 @@ int main(int argc, char **argv)
 	yylex();
 
 	if(!b1)
-		fprintf(stderr, "Warning: No metadata was defined in the input file.%s\n");
+		fprintf(stderr, "Warning: No metadata was defined in the input file.\n");
 
 	// Constroi todas as diretorias e ficheiros em memoria.
 	if(!b2)
-		fprintf(stderr, "Tree structure was not defined, aborting creation.%s\n");
+		fprintf(stderr, "Tree structure was not defined, aborting creation.\n");
 	else
 		dump_tree_builder(tree);
 
